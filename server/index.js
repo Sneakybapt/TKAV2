@@ -160,9 +160,14 @@ mongoose.connect(MONGO_URI)
 .catch(err => console.error("❌ Erreur MongoDB :", err));
 
 
+//const redis = new Redis({
+  //url: "https://workable-glider-46770.upstash.io",
+  //token: "AbayAAIjcDE1ZGJkYjg4Njg0MTI0N2IyYTQ2NTk4NGM5MGE0NDY1ZXAxMA"
+//});
+
 const redis = new Redis({
-  url: "https://workable-glider-46770.upstash.io",
-  token: "AbayAAIjcDE1ZGJkYjg4Njg0MTI0N2IyYTQ2NTk4NGM5MGE0NDY1ZXAxMA"
+  url: "https://secure-sunfish-7147.upstash.io",
+  token: "ARvrAAImcDEyODQ3MmViYzRhNGU0ZDZmYWQ1ODMxZjg4ODQyY2Y4YnAxNzE0Nw"
 });
 
 const missionsPath = path.join(__dirname, "missions.json");
