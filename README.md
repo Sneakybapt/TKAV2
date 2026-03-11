@@ -1,69 +1,50 @@
-# React + TypeScript + Vite
+# TKA - Stack Docker + PostgreSQL (temps reel)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ce projet tourne desormais avec:
+- Backend Node/Socket.IO dans `server/`
+- PostgreSQL comme base principale (Prisma)
+- Docker Compose pour un environnement local identique au VPS
 
-Currently, two official plugins are available:
+## 1) Lancer en local (conditions reelles)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Une seule ligne (build + db + migrations + app):
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+docker compose --env-file .env.local up --build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Le conteneur `app` execute automatiquement:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npx prisma migrate deploy && node index.js
 ```
+
+## 2) Lancer sur VPS
+
+```bash
+docker compose --env-file .env.vps up -d
+```
+
+## 3) Variables d'environnement
+
+- Local: `.env.local`
+- VPS: `.env.vps`
+- Exemple: `.env.example`
+
+Variables principales:
+- `DATABASE_URL`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `CORS_ORIGIN`
+- `PORT`
+
+## 4) Realtime garanti
+
+Le temps reel reste gere par Socket.IO.
+
+Lors d'une elimination:
+1. ecriture transactionnelle en PostgreSQL
+2. emission immediate des events Socket (`joueur_elimine`, `mise_a_jour_joueurs`, etc.)
+
+Tu gardes donc la notification instantanee + un etat persistant fiable.

@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GameStatus {
+  LOBBY
+  COUNTDOWN
+  RUNNING
+  FINISHED
+}
+
+model User {
+  id           String       @id @default(cuid())
+  pseudo       String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  gamePlayers  GamePlayer[]
+}
+
+model Game {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  status      GameStatus    @default(LOBBY)
+  createdAt   DateTime      @default(now())
+  startedAt   DateTime?
+  endedAt     DateTime?
+  players     GamePlayer[]
+  assignments Assignment[]
+  eliminations Elimination[]
+}
+
+model Mission {
+  id          String       @id @default(cuid())
+  content     String       @unique
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  assignments Assignment[]
+}
+
+model GamePlayer {
+  id                   String       @id @default(cuid())
+  gameId               String
+  userId               String
+  socketId             String?
+  isAlive              Boolean      @default(true)
+  validatedMission     Boolean      @default(false)
+  missionChanges       Int          @default(0)
+  finalPosition        Int?
+  eliminatedAt         DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  game                 Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignmentsAsKiller  Assignment[] @relation("KillerAssignments")
+  assignmentsAsTarget  Assignment[] @relation("TargetAssignments")
+  eliminationsAsKiller Elimination[] @relation("EliminationKiller")
+  eliminationsAsVictim Elimination[] @relation("EliminationVictim")
+
+  @@unique([gameId, userId])
+  @@index([gameId, isAlive])
+  @@index([socketId])
+}
+
+model Assignment {
+  id             String      @id @default(cuid())
+  gameId         String
+  killerPlayerId String
+  targetPlayerId String?
+  missionId      String
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  validatedAt    DateTime?
+  game           Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  killerPlayer   GamePlayer  @relation("KillerAssignments", fields: [killerPlayerId], references: [id], onDelete: Cascade)
+  targetPlayer   GamePlayer? @relation("TargetAssignments", fields: [targetPlayerId], references: [id], onDelete: SetNull)
+  mission        Mission     @relation(fields: [missionId], references: [id])
+
+  @@index([gameId, killerPlayerId, isActive])
+}
+
+model Elimination {
+  id            String     @id @default(cuid())
+  gameId        String
+  killerPlayerId String
+  victimPlayerId String
+  message       String?
+  createdAt     DateTime   @default(now())
+  game          Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  killerPlayer  GamePlayer @relation("EliminationKiller", fields: [killerPlayerId], references: [id], onDelete: Cascade)
+  victimPlayer  GamePlayer @relation("EliminationVictim", fields: [victimPlayerId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, createdAt])
+}
