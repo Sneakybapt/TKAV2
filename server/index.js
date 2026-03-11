@@ -256,6 +256,14 @@ app.get("/api/profil-stats", async (req, res) => {
   }
 });
 
+const frontendDistPath = path.resolve(__dirname, "../dist");
+app.use(express.static(frontendDistPath));
+
+// Fallback SPA: toutes les routes non-API retournent index.html
+app.get(/^(?!\/api).*/, (_req, res) => {
+  res.sendFile(path.join(frontendDistPath, "index.html"));
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
