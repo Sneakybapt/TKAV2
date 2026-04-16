@@ -23,6 +23,7 @@ export default function Jeu() {
   const [notification, setNotification] = useState<NotificationData | null>(null);
   const [missionsChangees, setMissionsChangees] = useState(0); // ✅ compteur mission
   const [missionValidee, setMissionValidee] = useState(false);
+  const [demandeEnCours, setDemandeEnCours] = useState(false);
 
   useEffect(() => {
     const pseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
@@ -60,6 +61,12 @@ export default function Jeu() {
 
 
     socket.on("partie_lancee", handleReception);
+    socket.on("demande_elimination_envoyee", () => {
+      setDemandeEnCours(true);
+    });
+    socket.on("demande_elimination_resolue", () => {
+      setDemandeEnCours(false);
+    });
 
     socket.on("demande_validation", ({ tueur, message }) => {
       setNotification({ tueur, message });
@@ -95,6 +102,7 @@ export default function Jeu() {
     socket.on("erreur", (msg) => {
       console.warn("Erreur reçue :", msg);
       setEnChargement(false);
+      setDemandeEnCours(false);
     });
 
     return () => {
@@ -106,6 +114,8 @@ export default function Jeu() {
       socket.off("nouvelle_mission");
       socket.off("joueur_elimine");
       socket.off("mission_validee_recue");
+      socket.off("demande_elimination_envoyee");
+      socket.off("demande_elimination_resolue");
     };
   }, [navigate]);
 
@@ -124,7 +134,7 @@ export default function Jeu() {
 
     setModeValidation(false);
     setTexteMission("");
-    alert("Mission envoyée à ta cible. En attente de sa validation 👀");
+    setDemandeEnCours(true);
   };
 
   const handleChangerMission = () => {
@@ -232,6 +242,20 @@ export default function Jeu() {
 
 
       <div style={{ height: "1.5rem" }} />
+
+      {demandeEnCours && (
+        <div
+          style={{
+            marginTop: "1rem",
+            color: "white",
+            border: "1px dashed #663399",
+            padding: "1rem",
+            backgroundColor: "rgba(102, 51, 153, 0.25)",
+          }}
+        >
+          ⏳ Demande en cours...
+        </div>
+      )}
 
       {notification && (
         <div style={{

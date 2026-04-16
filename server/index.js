@@ -503,6 +503,7 @@ io.on("connection", (socket) => {
       if (!targetPlayer || !targetPlayer.socketId) return;
       pendingEliminations.set(`${code}:${cible}`, { tueur, message });
       io.to(targetPlayer.socketId).emit("demande_validation", { tueur, message });
+      io.to(socket.id).emit("demande_elimination_envoyee");
     } catch (error) {
       console.error("Erreur tentative_elimination:", error);
       socket.emit("erreur", "Tentative invalide.");
@@ -607,6 +608,7 @@ io.on("connection", (socket) => {
 
       const killerState = players.find((p) => p.pseudo === tueur);
       if (killerState?.id) {
+        io.to(killerState.id).emit("demande_elimination_resolue");
         io.to(killerState.id).emit("partie_lancee", {
           pseudo: killerState.pseudo,
           cible: killerState.cible,
