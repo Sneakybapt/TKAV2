@@ -635,11 +635,36 @@ io.on("connection", (socket) => {
     try {
       const gp = await prisma.gamePlayer.findFirst({
         where: { game: { code }, user: { pseudo } },
-        select: { validatedMission: true },
+        select: { validatedMission: true, missionChanges: true },
       });
-      io.to(socket.id).emit("mission_validee_recue", { verrou: Boolean(gp?.validatedMission) });
+      io.to(socket.id).emit("mission_validee_recue", {
+        verrou: Boolean(gp?.validatedMission),
+        missionChanges: gp?.missionChanges ?? 0,
+      });
     } catch (error) {
       console.error("Erreur verif_mission_validee:", error);
+    }
+  });
+
+  socket.on("valider_mission", async ({ code, pseudo }) => {
+    try {
+      const gp = await prisma.gamePlayer.findFirst({
+        where: { game: { code }, user: { pseudo }, isAlive: true },
+        select: { id: true, missionChanges: true },
+      });
+      if (!gp) return;
+
+      await prisma.gamePlayer.update({
+        where: { id: gp.id },
+        data: { validatedMission: true },
+      });
+
+      io.to(socket.id).emit("mission_validee_recue", {
+        verrou: true,
+        missionChanges: gp.missionChanges,
+      });
+    } catch (error) {
+      console.error("Erreur valider_mission:", error);
     }
   });
 
@@ -670,6 +695,11 @@ io.on("connection", (socket) => {
       });
       if (!gp) return;
 
+      if (gp.validatedMission) {
+        if (gp.socketId) io.to(gp.socketId).emit("erreur", "Mission deja validee.");
+        return;
+      }
+
       if (gp.missionChanges >= 2) {
         if (gp.socketId) io.to(gp.socketId).emit("erreur", "Tu as deja change ta mission 2 fois.");
         return;
@@ -691,7 +721,10 @@ io.on("connection", (socket) => {
       ]);
 
       if (gp.socketId) {
-        io.to(gp.socketId).emit("nouvelle_mission", { mission: nouvelleMission.content });
+        io.to(gp.socketId).emit("nouvelle_mission", {
+          mission: nouvelleMission.content,
+          missionChanges: gp.missionChanges + 1,
+        });
       }
     } catch (error) {
       console.error("Erreur demande_nouvelle_mission:", error);

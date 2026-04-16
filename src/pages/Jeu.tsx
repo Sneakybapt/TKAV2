@@ -48,7 +48,8 @@ export default function Jeu() {
       code: localStorage.getItem("tka_code")
     });
 
-    socket.on("mission_validee_recue", ({ verrou }) => {
+    socket.on("mission_validee_recue", ({ verrou, missionChanges }) => {
+      setMissionsChangees(typeof missionChanges === "number" ? missionChanges : 0);
       if (verrou) {
         console.log("🔒 Mission verrouillée par le backend");
         setMissionValidee(true);
@@ -82,9 +83,13 @@ export default function Jeu() {
       navigate("/victoire");
     });
 
-    socket.on("nouvelle_mission", ({ mission }) => {
+    socket.on("nouvelle_mission", ({ mission, missionChanges }) => {
       setInfos((prev) => prev ? { ...prev, mission } : prev);
-      setMissionsChangees((count) => count + 1);
+      if (typeof missionChanges === "number") {
+        setMissionsChangees(missionChanges);
+      } else {
+        setMissionsChangees((count) => count + 1);
+      }
     });
 
     socket.on("erreur", (msg) => {
@@ -212,7 +217,11 @@ export default function Jeu() {
           </button>
 
           <button
-            onClick={() => setMissionValidee(true)}
+            onClick={() => {
+              if (!infos) return;
+              socket.emit("valider_mission", { pseudo: infos.pseudo, code: infos.code });
+              setMissionValidee(true);
+            }}
             className="btn-retourmission"
           >
             ✅ Valider la mission
