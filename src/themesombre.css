@@ -412,3 +412,120 @@ body {
   backdrop-filter: blur(2px);
   border-left: 4px solid rgba(255, 255, 255, 0.2);
 }
+
+/* ---- Responsive & mobile usability ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  min-height: 100dvh;
+  padding: 1rem;
+}
+
+.accueil-container,
+.salleattente-container,
+.creer-container,
+.rejoindre-container,
+.elimine-container {
+  width: min(100%, 500px);
+  max-width: 500px;
+}
+
+.creer-input,
+.rejoindre-input,
+.inscription-input,
+.mission-textarea {
+  width: 100%;
+  font-size: 16px; /* evite le zoom auto iOS */
+  line-height: 1.35;
+}
+
+.creer-input,
+.rejoindre-input,
+.inscription-input {
+  min-height: 48px;
+}
+
+.mission-textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+@media (max-width: 768px) {
+  body {
+    align-items: flex-start;
+    justify-content: center;
+    background-attachment: scroll;
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .accueil-container,
+  .salleattente-container,
+  .creer-container,
+  .rejoindre-container,
+  .elimine-container {
+    border-radius: 10px;
+    padding: 1.2rem;
+  }
+
+  .accueil-title {
+    font-size: 2rem;
+    line-height: 1.15;
+  }
+
+  .salleattente-title,
+  .creer-title,
+  .rejoindre-title,
+  .inscription-title {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .profil-bar {
+    position: static;
+    margin-bottom: 1rem;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .profil-button {
+    width: 100%;
+  }
+
+  .btn-relancermission,
+  .btn-retourmission,
+  .btn-retour,
+  .btn-fantome {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0.75rem 0.5rem 1.25rem;
+  }
+
+  .accueil-title {
+    font-size: 1.7rem;
+  }
+
+  .accueil-subtitle,
+  .salleattente-subtitle,
+  .consignes-box {
+    font-size: 0.95rem;
+  }
+
+  .accueil-button {
+    min-height: 46px;
+    padding: 0.7rem 0.9rem;
+  }
+}
