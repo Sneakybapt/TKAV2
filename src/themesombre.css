@@ -461,7 +461,7 @@ body {
 
 @media (max-width: 768px) {
   body {
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     background-attachment: scroll;
     padding: 1rem 0.75rem 2rem;
