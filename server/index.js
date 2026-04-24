@@ -502,8 +502,17 @@ io.on("connection", (socket) => {
 
       if (!targetPlayer || !targetPlayer.socketId) return;
       pendingEliminations.set(`${code}:${cible}`, { tueur, message });
-      io.to(targetPlayer.socketId).emit("demande_validation", { tueur, message });
       io.to(socket.id).emit("demande_elimination_envoyee");
+
+      io.to(targetPlayer.socketId)
+        .timeout(5000)
+        .emit("demande_validation", { tueur, message }, (err) => {
+          if (err) {
+            io.to(socket.id).emit("demande_elimination_non_recue");
+            return;
+          }
+          io.to(socket.id).emit("demande_elimination_recue");
+        });
     } catch (error) {
       console.error("Erreur tentative_elimination:", error);
       socket.emit("erreur", "Tentative invalide.");

@@ -24,6 +24,7 @@ export default function Jeu() {
   const [missionsChangees, setMissionsChangees] = useState(0); // ✅ compteur mission
   const [missionValidee, setMissionValidee] = useState(false);
   const [demandeEnCours, setDemandeEnCours] = useState(false);
+  const [statutDemande, setStatutDemande] = useState<"envoi" | "recue">("envoi");
 
   useEffect(() => {
     const pseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
@@ -62,14 +63,24 @@ export default function Jeu() {
 
     socket.on("partie_lancee", handleReception);
     socket.on("demande_elimination_envoyee", () => {
+      setStatutDemande("envoi");
       setDemandeEnCours(true);
+    });
+    socket.on("demande_elimination_recue", () => {
+      setStatutDemande("recue");
+      setDemandeEnCours(true);
+    });
+    socket.on("demande_elimination_non_recue", () => {
+      setDemandeEnCours(false);
+      alert("La cible n'a pas accuse reception de la demande.");
     });
     socket.on("demande_elimination_resolue", () => {
       setDemandeEnCours(false);
     });
 
-    socket.on("demande_validation", ({ tueur, message }) => {
+    socket.on("demande_validation", ({ tueur, message }, ack?: () => void) => {
       setNotification({ tueur, message });
+      if (typeof ack === "function") ack();
     });
 
     socket.on("joueur_elimine", (pseudoElimine) => {
@@ -103,6 +114,7 @@ export default function Jeu() {
       console.warn("Erreur reçue :", msg);
       setEnChargement(false);
       setDemandeEnCours(false);
+      setStatutDemande("envoi");
     });
 
     return () => {
@@ -115,6 +127,8 @@ export default function Jeu() {
       socket.off("joueur_elimine");
       socket.off("mission_validee_recue");
       socket.off("demande_elimination_envoyee");
+      socket.off("demande_elimination_recue");
+      socket.off("demande_elimination_non_recue");
       socket.off("demande_elimination_resolue");
     };
   }, [navigate]);
@@ -135,6 +149,7 @@ export default function Jeu() {
     setModeValidation(false);
     setTexteMission("");
     setDemandeEnCours(true);
+    setStatutDemande("envoi");
   };
 
   const handleChangerMission = () => {
@@ -253,7 +268,9 @@ export default function Jeu() {
             backgroundColor: "rgba(102, 51, 153, 0.25)",
           }}
         >
-          ⏳ Demande en cours...
+          {statutDemande === "recue"
+            ? "✅ Demande recue par la cible. En attente de validation..."
+            : "⏳ Demande en cours... en attente de reception par la cible"}
         </div>
       )}
 
