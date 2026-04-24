@@ -70,10 +70,6 @@ export default function Jeu() {
       setStatutDemande("recue");
       setDemandeEnCours(true);
     });
-    socket.on("demande_elimination_non_recue", () => {
-      setDemandeEnCours(false);
-      alert("La cible n'a pas accuse reception de la demande.");
-    });
     socket.on("demande_elimination_resolue", () => {
       setDemandeEnCours(false);
     });
@@ -128,7 +124,6 @@ export default function Jeu() {
       socket.off("mission_validee_recue");
       socket.off("demande_elimination_envoyee");
       socket.off("demande_elimination_recue");
-      socket.off("demande_elimination_non_recue");
       socket.off("demande_elimination_resolue");
     };
   }, [navigate]);

@@ -34,18 +34,11 @@ async function emitDemandeValidation({
 }) {
   if (!cibleSocketId) return;
 
-  io.to(cibleSocketId)
-    .timeout(5000)
-    .emit("demande_validation", { tueur, message }, async (err) => {
-      const resolvedKillerSocketId = killerSocketId || (await getAlivePlayerSocketId(code, tueur));
-      if (!resolvedKillerSocketId) return;
-
-      if (err) {
-        io.to(resolvedKillerSocketId).emit("demande_elimination_non_recue");
-        return;
-      }
-      io.to(resolvedKillerSocketId).emit("demande_elimination_recue");
-    });
+  io.to(cibleSocketId).emit("demande_validation", { tueur, message }, async () => {
+    const resolvedKillerSocketId = killerSocketId || (await getAlivePlayerSocketId(code, tueur));
+    if (!resolvedKillerSocketId) return;
+    io.to(resolvedKillerSocketId).emit("demande_elimination_recue");
+  });
 }
 
 app.use(
