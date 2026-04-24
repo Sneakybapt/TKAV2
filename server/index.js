@@ -17,6 +17,37 @@ const __dirname = path.dirname(__filename);
 const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173").split(",").map((v) => v.trim());
 const pendingEliminations = new Map();
 
+async function getAlivePlayerSocketId(code, pseudo) {
+  const killer = await prisma.gamePlayer.findFirst({
+    where: { game: { code }, user: { pseudo }, isAlive: true },
+    select: { socketId: true },
+  });
+  return killer?.socketId ?? null;
+}
+
+async function emitDemandeValidation({
+  code,
+  cibleSocketId,
+  tueur,
+  message,
+  killerSocketId = null,
+}) {
+  if (!cibleSocketId) return;
+
+  io.to(cibleSocketId)
+    .timeout(5000)
+    .emit("demande_validation", { tueur, message }, async (err) => {
+      const resolvedKillerSocketId = killerSocketId || (await getAlivePlayerSocketId(code, tueur));
+      if (!resolvedKillerSocketId) return;
+
+      if (err) {
+        io.to(resolvedKillerSocketId).emit("demande_elimination_non_recue");
+        return;
+      }
+      io.to(resolvedKillerSocketId).emit("demande_elimination_recue");
+    });
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -386,7 +417,12 @@ io.on("connection", (socket) => {
 
       const pending = pendingEliminations.get(`${code}:${pseudo}`);
       if (pending) {
-        socket.emit("demande_validation", { tueur: pending.tueur, message: pending.message });
+        await emitDemandeValidation({
+          code,
+          cibleSocketId: socket.id,
+          tueur: pending.tueur,
+          message: pending.message,
+        });
       }
 
       const players = await getPlayersState(code);
@@ -500,19 +536,16 @@ io.on("connection", (socket) => {
         include: { user: true },
       });
 
-      if (!targetPlayer || !targetPlayer.socketId) return;
+      if (!targetPlayer) return;
       pendingEliminations.set(`${code}:${cible}`, { tueur, message });
       io.to(socket.id).emit("demande_elimination_envoyee");
-
-      io.to(targetPlayer.socketId)
-        .timeout(5000)
-        .emit("demande_validation", { tueur, message }, (err) => {
-          if (err) {
-            io.to(socket.id).emit("demande_elimination_non_recue");
-            return;
-          }
-          io.to(socket.id).emit("demande_elimination_recue");
-        });
+      await emitDemandeValidation({
+        code,
+        cibleSocketId: targetPlayer.socketId,
+        tueur,
+        message,
+        killerSocketId: socket.id,
+      });
     } catch (error) {
       console.error("Erreur tentative_elimination:", error);
       socket.emit("erreur", "Tentative invalide.");
